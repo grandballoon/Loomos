@@ -1,0 +1,605 @@
+/*
+ * Crosshair — print-shop design system.
+ * Warm paper ground, ink hairlines, registration-red accents; Instrument
+ * Serif for display, Azeret Mono for measurements and controls.
+ */
+
+:root {
+  --paper: #f2ecdf;
+  --paper-raised: #f8f4ea;
+  --ink: #211d17;
+  --ink-soft: rgba(33, 29, 23, 0.62);
+  --hairline: rgba(33, 29, 23, 0.22);
+  --hairline-faint: rgba(33, 29, 23, 0.1);
+  --red: #cc2408;
+  --red-deep: #a81c05;
+  --serif: "Instrument Serif", Georgia, serif;
+  --mono: "Azeret Mono", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  background-image: radial-gradient(rgba(33, 29, 23, 0.045) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 18px 28px 14px;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+.masthead .mark {
+  width: 30px;
+  height: 30px;
+  color: var(--red);
+  align-self: center;
+  flex: none;
+}
+
+.masthead h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.masthead-sub {
+  font-style: italic;
+  color: var(--red);
+}
+
+.masthead-note {
+  margin: 0 0 0 auto;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  max-width: 34ch;
+  text-align: right;
+}
+
+/* ---------- layout ---------- */
+
+.columns {
+  display: grid;
+  grid-template-columns: 316px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar {
+  border-right: 1px solid var(--hairline);
+  padding: 20px 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.content {
+  padding: 22px 28px 48px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+@media (max-width: 900px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .masthead-note {
+    display: none;
+  }
+}
+
+/* ---------- settings ---------- */
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--red-deep);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+
+.section-note {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.field-label {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.field-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-input input[type="text"],
+.field-input input[type="number"],
+.field-input select {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: 1px solid var(--hairline);
+  border-radius: 0;
+  padding: 4px 7px;
+  width: 108px;
+  text-align: right;
+}
+
+.field-input select {
+  text-align: left;
+  width: 152px;
+}
+
+.field-input input:focus,
+.field-input select:focus,
+.image-effect:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: 0 0 0 1px var(--red);
+}
+
+.field-input input[type="color"] {
+  width: 42px;
+  height: 26px;
+  padding: 2px;
+  border: 1px solid var(--hairline);
+  background: var(--paper-raised);
+}
+
+.field-unit {
+  font-size: 11px;
+  color: var(--ink-soft);
+  width: 2ch;
+}
+
+.field-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggle-visual {
+  width: 34px;
+  height: 18px;
+  border: 1px solid var(--ink);
+  position: relative;
+  cursor: pointer;
+  flex: none;
+}
+
+.toggle-visual::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  background: var(--hairline);
+  transition: all 0.15s ease;
+}
+
+.field-toggle input:checked + .toggle-visual::after {
+  left: 18px;
+  background: var(--red);
+}
+
+.field-toggle input:focus-visible + .toggle-visual {
+  box-shadow: 0 0 0 2px var(--red);
+}
+
+/* ---------- export block ---------- */
+
+.export-block {
+  margin-top: auto;
+  border-top: 1.5px solid var(--ink);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tally {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+}
+
+.tally div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dotted var(--hairline);
+  padding-bottom: 2px;
+}
+
+.tally dt {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.tally dd {
+  margin: 0;
+  font-size: 12px;
+}
+
+.export-button {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--red);
+  color: var(--paper-raised);
+  border: none;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.export-button:hover:not(:disabled) {
+  background: var(--red-deep);
+}
+
+.export-button:disabled {
+  background: var(--hairline);
+  cursor: not-allowed;
+}
+
+.print-note {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+/* ---------- dropzone ---------- */
+
+.dropzone {
+  flex: 1;
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: transparent;
+  border: 1.5px dashed var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.dropzone:hover,
+.app.dragging .dropzone {
+  border-color: var(--red);
+}
+
+.dropzone-mark {
+  width: 110px;
+  height: 110px;
+  color: var(--red);
+}
+
+.dropzone-title {
+  font-family: var(--serif);
+  font-size: 26px;
+}
+
+.dropzone-hint {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.drop-veil {
+  position: fixed;
+  inset: 10px;
+  border: 2px dashed var(--red);
+  background: rgba(242, 236, 223, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.drop-veil span {
+  font-family: var(--serif);
+  font-size: 34px;
+  font-style: italic;
+  color: var(--red);
+}
+
+/* ---------- panels & image list ---------- */
+
+.panel {
+  border: 1px solid var(--hairline);
+  background: var(--paper-raised);
+  padding: 16px 18px 18px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-head .section-title {
+  flex: 1;
+}
+
+.ghost-button {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  padding: 5px 10px;
+  cursor: pointer;
+  flex: none;
+}
+
+.ghost-button:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.notices {
+  border: 1px solid var(--red);
+  background: rgba(204, 36, 8, 0.06);
+  padding: 8px 12px;
+  font-size: 11.5px;
+  color: var(--red-deep);
+}
+
+.notices p {
+  margin: 2px 0;
+}
+
+.image-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.image-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dotted var(--hairline);
+}
+
+.image-row:last-child {
+  border-bottom: none;
+}
+
+.image-ordinal {
+  font-size: 11px;
+  color: var(--red);
+  width: 2.5ch;
+  flex: none;
+}
+
+.image-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border: 1px solid var(--hairline);
+  background: #fff;
+  flex: none;
+}
+
+.image-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.image-name {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.image-dims {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+
+.image-effect {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  padding: 4px 6px;
+  flex: none;
+}
+
+.image-actions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+.image-actions button {
+  font-family: var(--mono);
+  font-size: 12px;
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.image-actions button:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.image-actions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.image-actions .remove:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* ---------- preview ---------- */
+
+.preview-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.view-tabs {
+  display: flex;
+  border: 1px solid var(--ink);
+}
+
+.view-tabs button {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  color: var(--ink);
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.view-tabs button.active {
+  background: var(--ink);
+  color: var(--paper-raised);
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.preview-card {
+  margin: 0;
+}
+
+.preview-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #ffffff;
+  border: 1px solid var(--hairline);
+  box-shadow: 3px 3px 0 var(--hairline-faint);
+}
+
+.preview-card figcaption {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.leaf-outline {
+  fill: none;
+  stroke: var(--hairline-faint);
+  stroke-width: 0.5;
+}
+
+.sheet-outline {
+  fill: none;
+  stroke: var(--hairline);
+  stroke-width: 0.75;
+}
+
+.spine-line {
+  stroke: var(--hairline);
+  stroke-width: 0.75;
+}
+
+.fold-line {
+  stroke: var(--ink-soft);
+  stroke-width: 0.5;
+  stroke-dasharray: 4 3;
+}
+
+.leaf-title-text {
+  font-family: Helvetica, Arial, sans-serif;
+  fill: var(--ink);
+}

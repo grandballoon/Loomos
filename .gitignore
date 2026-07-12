@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+crosshair-web/dist/
+
+# Python
+__pycache__/
+*.egg-info/
+.venv/
+
+# Local experiment data (large images / generated output)
+experiments/inputs/
+experiments/outputs/
+
+# Lavish review sessions
+.lavish/

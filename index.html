@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loomis Head Construction</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1914;
+    color: #c8c0b0;
+    font-family: 'EB Garamond', Georgia, serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #canvas-container {
+    position: absolute;
+    inset: 0;
+  }
+
+  canvas { display: block; }
+
+  .overlay-top {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 24px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.6s ease;
+  }
+
+  .overlay-top.faded { opacity: 0; }
+
+  .title-block h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #e8e0d0;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+
+  .title-block .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 300;
+    color: #7a7468;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .controls-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 300;
+    color: #5a5448;
+    text-align: right;
+    line-height: 1.8;
+    letter-spacing: 0.04em;
+  }
+
+  .overlay-bottom {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 20px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.6s ease;
+  }
+
+  .overlay-bottom.faded { opacity: 0; pointer-events: none; }
+
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 300;
+    color: #7a7468;
+    letter-spacing: 0.04em;
+  }
+
+  .legend-swatch {
+    width: 18px;
+    height: 2px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  .toggle-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: auto;
+  }
+
+  .toggle-btn {
+    background: rgba(30, 28, 22, 0.7);
+    border: 1px solid #3a3630;
+    color: #a09888;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    padding: 6px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .toggle-btn:hover {
+    border-color: #5a5448;
+    color: #c8c0b0;
+  }
+
+  .toggle-btn.active {
+    border-color: #6a6458;
+    color: #e8e0d0;
+    background: rgba(50, 46, 38, 0.7);
+  }
+
+  .toggle-btn .indicator {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    transition: background 0.2s ease;
+  }
+
+  .toggle-btn.active .indicator { background: #b8a878; }
+  .toggle-btn:not(.active) .indicator { background: #3a3630; }
+
+  .angle-readout {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 300;
+    color: #5a5448;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div class="overlay-top">
+  <div class="title-block">
+    <h1>Loomis Head</h1>
+    <div class="subtitle">Drawing Primitive No. 1 — Cranial Ball Construction</div>
+  </div>
+  <div class="controls-hint">
+    drag to rotate<br>
+    scroll to zoom<br>
+    shift+drag to pan
+  </div>
+</div>
+
+<div class="overlay-bottom">
+  <div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-swatch" style="background: #b8a878;"></div>
+        Cross of the brow / center line
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background: #c27c5a;"></div>
+        Facial thirds division
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background: rgba(160,152,136,0.4);"></div>
+        Side plane cut
+      </div>
+    </div>
+    <div class="angle-readout" id="angle-readout" style="margin-top: 10px;">0° / 0°</div>
+  </div>
+  <div class="toggle-panel">
+    <button class="toggle-btn active" data-layer="cross" onclick="toggleLayer(this)">
+      <span class="indicator"></span>Cross
+    </button>
+    <button class="toggle-btn active" data-layer="thirds" onclick="toggleLayer(this)">
+      <span class="indicator"></span>Thirds
+    </button>
+    <button class="toggle-btn active" data-layer="sidecuts" onclick="toggleLayer(this)">
+      <span class="indicator"></span>Side Cuts
+    </button>
+    <button class="toggle-btn" data-layer="wireframe" onclick="toggleLayer(this)">
+      <span class="indicator"></span>Wireframe
+    </button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── Scene Setup ───
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1914);
+
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0.2, 4.2);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+
+// ─── Lighting ───
+const ambientLight = new THREE.AmbientLight(0xc8c0b0, 0.4);
+scene.add(ambientLight);
+
+const keyLight = new THREE.DirectionalLight(0xf0e8d8, 0.7);
+keyLight.position.set(3, 4, 5);
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(0x8898b0, 0.25);
+fillLight.position.set(-3, 1, 2);
+scene.add(fillLight);
+
+// ─── Head Group ───
+const headGroup = new THREE.Group();
+scene.add(headGroup);
+
+const RADIUS = 0.9655; // volume reduced 10% from 1.0 (cbrt(0.9))
+const SIDE_CUT = 0.15; // how much to cut off each side
+
+// ─── Cranial Sphere ───
+// Wireframe mode
+const sphereGeo = new THREE.SphereGeometry(RADIUS, 48, 48);
+const sphereWire = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({
+  color: 0x4a4438,
+  wireframe: true,
+  transparent: true,
+  opacity: 0.12
+}));
+sphereWire.visible = false; // start in transparent mode
+headGroup.add(sphereWire);
+
+// Solid sphere underneath for depth — starts transparent
+const sphereSolid = new THREE.Mesh(
+  new THREE.SphereGeometry(RADIUS * 0.995, 48, 48),
+  new THREE.MeshStandardMaterial({
+    color: 0x2a2820,
+    roughness: 0.9,
+    metalness: 0.0,
+    transparent: true,
+    opacity: 0.15
+  })
+);
+headGroup.add(sphereSolid);
+
+// ─── Helper: Create a thick curve as a tube on the sphere surface ───
+const TUBE_RADIUS = 0.005; // base tube thickness
+const TUBE_SEGMENTS = 8;
+
+function createThickCurve(pointsFn, color, opacity, numPoints, dashed) {
+  const points = [];
+  const segments = numPoints || 128;
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    points.push(pointsFn(t));
+  }
+
+  if (dashed) {
+    // For dashed lines, create multiple short tube segments with gaps
+    const group = new THREE.Group();
+    const dashLen = 4; // points per dash
+    const gapLen = 3;  // points per gap
+    let i = 0;
+    while (i < points.length - 1) {
+      const dashPoints = points.slice(i, Math.min(i + dashLen + 1, points.length));
+      if (dashPoints.length >= 2) {
+        const curve = new THREE.CatmullRomCurve3(dashPoints);
+        const tubeGeo = new THREE.TubeGeometry(curve, dashPoints.length * 2, TUBE_RADIUS, TUBE_SEGMENTS, false);
+        const tubeMat = new THREE.MeshBasicMaterial({
+          color: color,
+          transparent: true,
+          opacity: opacity,
+          depthTest: false,
+        });
+        group.add(new THREE.Mesh(tubeGeo, tubeMat));
+      }
+      i += dashLen + gapLen;
+    }
+    return group;
+  } else {
+    const curve = new THREE.CatmullRomCurve3(points);
+    const tubeGeo = new THREE.TubeGeometry(curve, segments * 2, TUBE_RADIUS, TUBE_SEGMENTS, false);
+    const tubeMat = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: opacity,
+      depthTest: false,
+    });
+    return new THREE.Mesh(tubeGeo, tubeMat);
+  }
+}
+
+// Helper: thick straight line between two points
+function createThickLine(p1, p2, color, opacity) {
+  const curve = new THREE.LineCurve3(p1, p2);
+  const tubeGeo = new THREE.TubeGeometry(curve, 4, TUBE_RADIUS, TUBE_SEGMENTS, false);
+  const tubeMat = new THREE.MeshBasicMaterial({
+    color: color,
+    transparent: true,
+    opacity: opacity,
+    depthTest: false,
+  });
+  return new THREE.Mesh(tubeGeo, tubeMat);
+}
+
+// ─── Cross: Vertical Center Line (hairline down to brow, FRONT of sphere) ───
+// In our parametric: y = r*cos(a), z = r*sin(a)
+// Front of sphere = positive z = angle in (0, π)
+// Hairline (y=2R/3): a = acos(2/3) ≈ 0.84
+// Brow/equator (y=0): a = π/2
+const crossVerticalGroup = new THREE.Group();
+const cvSegments = 32;
+const cvStartAngle = Math.PI / 2 - 0.12; // just slightly above equator
+const cvEndAngle = Math.PI / 2; // equator on front
+for (let i = 0; i < cvSegments; i++) {
+  const t0 = i / cvSegments;
+  const t1 = (i + 1) / cvSegments;
+  const a0 = cvStartAngle + (cvEndAngle - cvStartAngle) * t0;
+  const a1 = cvStartAngle + (cvEndAngle - cvStartAngle) * t1;
+  const r = RADIUS * 1.002;
+  const p0 = new THREE.Vector3(0, r * Math.cos(a0), r * Math.sin(a0));
+  const p1 = new THREE.Vector3(0, r * Math.cos(a1), r * Math.sin(a1));
+  const seg = new THREE.TubeGeometry(new THREE.LineCurve3(p0, p1), 2, TUBE_RADIUS, TUBE_SEGMENTS, false);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xb8a878, transparent: true, opacity: 0.9, depthTest: false });
+  crossVerticalGroup.add(new THREE.Mesh(seg, mat));
+}
+crossVerticalGroup.name = 'cross';
+headGroup.add(crossVerticalGroup);
+
+// Cross: Horizontal Brow Line (wraps around the equator)
+// Built as chained straight tube segments to avoid spline overshoot at seam
+const crossHorizontalGroup = new THREE.Group();
+const chSegments = 64;
+for (let i = 0; i < chSegments; i++) {
+  const t0 = i / chSegments;
+  const t1 = (i + 1) / chSegments;
+  const a0 = -Math.PI + 2 * Math.PI * t0;
+  const a1 = -Math.PI + 2 * Math.PI * t1;
+  const r = RADIUS * 1.002;
+  const p0 = new THREE.Vector3(r * Math.sin(a0), 0, r * Math.cos(a0));
+  const p1 = new THREE.Vector3(r * Math.sin(a1), 0, r * Math.cos(a1));
+  const seg = new THREE.TubeGeometry(new THREE.LineCurve3(p0, p1), 2, TUBE_RADIUS, TUBE_SEGMENTS, false);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xb8a878, transparent: true, opacity: 0.9, depthTest: false });
+  crossHorizontalGroup.add(new THREE.Mesh(seg, mat));
+}
+crossHorizontalGroup.name = 'cross';
+headGroup.add(crossHorizontalGroup);
+
+// ─── Facial Thirds Lines ───
+const hairlineY = 2 * RADIUS / 3;
+const hairlineR = Math.sqrt(RADIUS * RADIUS - hairlineY * hairlineY);
+// Dashed hairline built from chained straight tube segments (no CatmullRom)
+const hairlineGroup = new THREE.Group();
+const hlTotalSegs = 128;
+const hlDashLen = 4;
+const hlGapLen = 3;
+const hlStartAngle = -Math.PI * 0.75;
+const hlEndAngle = Math.PI * 0.75;
+let hlIdx = 0;
+while (hlIdx < hlTotalSegs) {
+  // Draw a dash
+  for (let d = 0; d < hlDashLen && hlIdx < hlTotalSegs; d++, hlIdx++) {
+    const t0 = hlIdx / hlTotalSegs;
+    const t1 = (hlIdx + 1) / hlTotalSegs;
+    const a0 = hlStartAngle + (hlEndAngle - hlStartAngle) * t0;
+    const a1 = hlStartAngle + (hlEndAngle - hlStartAngle) * t1;
+    const r = hairlineR * 1.005;
+    const p0 = new THREE.Vector3(r * Math.sin(a0), hairlineY, r * Math.cos(a0));
+    const p1 = new THREE.Vector3(r * Math.sin(a1), hairlineY, r * Math.cos(a1));
+    const seg = new THREE.TubeGeometry(new THREE.LineCurve3(p0, p1), 2, TUBE_RADIUS, TUBE_SEGMENTS, false);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xc27c5a, transparent: true, opacity: 0.8, depthTest: false });
+    hairlineGroup.add(new THREE.Mesh(seg, mat));
+  }
+  // Skip a gap
+  hlIdx += hlGapLen;
+}
+hairlineGroup.name = 'thirds';
+headGroup.add(hairlineGroup);
+
+const thirdSize = 2 * RADIUS / 3;
+
+// Center line: drops vertically from the frontmost point of the sphere
+const frontZ = RADIUS * 1.002;
+const centerLineDown = createThickLine(
+  new THREE.Vector3(0, 0, frontZ),
+  new THREE.Vector3(0, -thirdSize, frontZ),
+  0xb8a878, 0.6
+);
+centerLineDown.name = 'thirds';
+headGroup.add(centerLineDown);
+
+// Nose tick
+const noseTickHalf = thirdSize * 0.15 / 2;
+const noseTick = createThickLine(
+  new THREE.Vector3(-noseTickHalf, -thirdSize, frontZ),
+  new THREE.Vector3(noseTickHalf, -thirdSize, frontZ),
+  0xb8a878, 0.6
+);
+noseTick.name = 'thirds';
+headGroup.add(noseTick);
+
+// Chin plumb line
+const chinLineDown = createThickLine(
+  new THREE.Vector3(0, -thirdSize, frontZ),
+  new THREE.Vector3(0, -2 * thirdSize, frontZ),
+  0xb8a878, 0.6
+);
+chinLineDown.name = 'thirds';
+headGroup.add(chinLineDown);
+
+// Chin tick
+const chinTick = createThickLine(
+  new THREE.Vector3(-noseTickHalf, -2 * thirdSize, frontZ),
+  new THREE.Vector3(noseTickHalf, -2 * thirdSize, frontZ),
+  0xb8a878, 0.6
+);
+chinTick.name = 'thirds';
+headGroup.add(chinTick);
+
+// ─── Side Plane Cuts ───
+// Flat planes cut off the sides of the sphere
+function createSideCut(side) {
+  const xOffset = side * (RADIUS - SIDE_CUT);
+  // Create a disc/ellipse at the cut plane
+  const cutRadius = Math.sqrt(RADIUS * RADIUS - (RADIUS - SIDE_CUT) * (RADIUS - SIDE_CUT));
+
+  // Filled plane
+  const planeShape = new THREE.Shape();
+  const segments = 64;
+  for (let i = 0; i <= segments; i++) {
+    const angle = (i / segments) * Math.PI * 2;
+    const y = cutRadius * Math.cos(angle);
+    const z = cutRadius * Math.sin(angle);
+    if (i === 0) planeShape.moveTo(y, z);
+    else planeShape.lineTo(y, z);
+  }
+
+  const planeGeo = new THREE.ShapeGeometry(planeShape);
+  const planeMat = new THREE.MeshStandardMaterial({
+    color: 0x2a2820,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.9,
+    roughness: 0.95,
+  });
+  const planeMesh = new THREE.Mesh(planeGeo, planeMat);
+  planeMesh.rotation.y = side * Math.PI / 2;
+  // For rotation: orient the flat disc to face outward on x-axis
+  planeMesh.rotation.set(0, 0, 0);
+  planeMesh.position.x = xOffset;
+  // We need to orient the disc so its normal faces the x-axis
+  planeMesh.rotation.y = Math.PI / 2;
+  planeMesh.name = 'sidecuts';
+
+  // Edge ring as tube
+  const edgePoints = [];
+  for (let i = 0; i <= segments; i++) {
+    const angle = (i / segments) * Math.PI * 2;
+    const y = cutRadius * Math.cos(angle);
+    const z = cutRadius * Math.sin(angle);
+    edgePoints.push(new THREE.Vector3(xOffset, y, z));
+  }
+  const edgeCurve = new THREE.CatmullRomCurve3(edgePoints, true);
+  const edgeTubeGeo = new THREE.TubeGeometry(edgeCurve, segments * 2, TUBE_RADIUS, TUBE_SEGMENTS, true);
+  const edgeTubeMat = new THREE.MeshBasicMaterial({
+    color: 0xa09888,
+    transparent: true,
+    opacity: 0.4,
+    depthTest: false,
+  });
+  const edgeLine = new THREE.Mesh(edgeTubeGeo, edgeTubeMat);
+  edgeLine.name = 'sidecuts';
+
+  return [planeMesh, edgeLine];
+}
+
+const [leftPlane, leftEdge] = createSideCut(-1);
+const [rightPlane, rightEdge] = createSideCut(1);
+headGroup.add(leftPlane, leftEdge, rightPlane, rightEdge);
+
+// ─── Orbit Controls (manual implementation) ───
+let isDragging = false;
+let previousMouse = { x: 0, y: 0 };
+let spherical = { theta: 0, phi: Math.PI / 2 - 0.15 };
+let targetSpherical = { theta: 0, phi: Math.PI / 2 - 0.15 };
+let distance = 4.2;
+let targetDistance = 4.2;
+let panOffset = { x: 0, y: 0 };
+let targetPanOffset = { x: 0, y: 0 };
+let isPanning = false;
+
+// ─── UI Fade ───
+let hasRotated = false;
+let fadeTimer = null;
+const overlayTop = document.querySelector('.overlay-top');
+const overlayBottom = document.querySelector('.overlay-bottom');
+
+function onInteractionStart() {
+  if (!hasRotated) hasRotated = true;
+  // Show overlays during interaction
+  overlayTop.classList.remove('faded');
+  overlayBottom.classList.remove('faded');
+  if (fadeTimer) clearTimeout(fadeTimer);
+}
+
+function onInteractionEnd() {
+  if (!hasRotated) return;
+  if (fadeTimer) clearTimeout(fadeTimer);
+  fadeTimer = setTimeout(() => {
+    overlayTop.classList.add('faded');
+    overlayBottom.classList.add('faded');
+  }, 3000);
+}
+
+const canvas = renderer.domElement;
+
+canvas.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  isPanning = e.shiftKey;
+  previousMouse = { x: e.clientX, y: e.clientY };
+  onInteractionStart();
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - previousMouse.x;
+  const dy = e.clientY - previousMouse.y;
+
+  if (isPanning) {
+    targetPanOffset.x -= dx * 0.003;
+    targetPanOffset.y += dy * 0.003;
+  } else {
+    targetSpherical.theta -= dx * 0.008;
+    targetSpherical.phi -= dy * 0.008;
+    targetSpherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, targetSpherical.phi));
+  }
+  previousMouse = { x: e.clientX, y: e.clientY };
+});
+
+canvas.addEventListener('mouseup', () => { isDragging = false; onInteractionEnd(); });
+canvas.addEventListener('mouseleave', () => { isDragging = false; onInteractionEnd(); });
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  targetDistance += e.deltaY * 0.003;
+  targetDistance = Math.max(2, Math.min(10, targetDistance));
+  onInteractionStart();
+  onInteractionEnd();
+}, { passive: false });
+
+// Touch support (single-finger orbit + two-finger pinch-to-zoom)
+let lastPinchDist = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  onInteractionStart();
+  if (e.touches.length === 1) {
+    isDragging = true;
+    isPanning = false;
+    previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  } else if (e.touches.length === 2) {
+    isDragging = false;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    lastPinchDist = Math.sqrt(dx * dx + dy * dy);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1 && isDragging) {
+    const dx = e.touches[0].clientX - previousMouse.x;
+    const dy = e.touches[0].clientY - previousMouse.y;
+    targetSpherical.theta -= dx * 0.008;
+    targetSpherical.phi -= dy * 0.008;
+    targetSpherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, targetSpherical.phi));
+    previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  } else if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const pinchDist = Math.sqrt(dx * dx + dy * dy);
+    if (lastPinchDist > 0) {
+      const delta = lastPinchDist - pinchDist;
+      targetDistance += delta * 0.015;
+      targetDistance = Math.max(2, Math.min(10, targetDistance));
+    }
+    lastPinchDist = pinchDist;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { isDragging = false; onInteractionEnd(); });
+
+// ─── Layer Visibility ───
+const layers = { cross: true, thirds: true, sidecuts: true, wireframe: false };
+
+function toggleLayer(btn) {
+  const layer = btn.dataset.layer;
+  layers[layer] = !layers[layer];
+  btn.classList.toggle('active');
+
+  headGroup.traverse((child) => {
+    if (child.name === layer) {
+      child.visible = layers[layer];
+    }
+  });
+
+  if (layer === 'wireframe') {
+    sphereWire.visible = layers[layer];
+    // When wireframe is on, make solid sphere opaque; when off, make it transparent
+    sphereSolid.material.opacity = layers[layer] ? 0.85 : 0.15;
+  }
+}
+
+// ─── Silhouette Ring ───
+// Silhouette outline using an inverted-hull (back-face expanded) shader.
+// This renders a slightly-inflated copy of the sphere with only back faces visible,
+// producing a clean, consistent-width outline at all angles.
+const outlineMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    outlineColor: { value: new THREE.Color(0xb8a878) },
+    outlineThickness: { value: 0.0056 },
+    outlineAlpha: { value: 0.9 },
+  },
+  vertexShader: `
+    uniform float outlineThickness;
+    void main() {
+      vec3 inflated = position + normal * outlineThickness;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(inflated, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 outlineColor;
+    uniform float outlineAlpha;
+    void main() {
+      gl_FragColor = vec4(outlineColor, outlineAlpha);
+    }
+  `,
+  side: THREE.BackSide,
+  transparent: true,
+  depthWrite: false,
+});
+
+const outlineMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(RADIUS, 48, 48),
+  outlineMaterial
+);
+headGroup.add(outlineMesh);
+
+// ─── Angle Readout ───
+const readout = document.getElementById('angle-readout');
+
+// ─── Animation Loop ───
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Smooth interpolation
+  const lerpFactor = 0.08;
+  spherical.theta += (targetSpherical.theta - spherical.theta) * lerpFactor;
+  spherical.phi += (targetSpherical.phi - spherical.phi) * lerpFactor;
+  distance += (targetDistance - distance) * lerpFactor;
+  panOffset.x += (targetPanOffset.x - panOffset.x) * lerpFactor;
+  panOffset.y += (targetPanOffset.y - panOffset.y) * lerpFactor;
+
+  // Update camera position
+  camera.position.x = distance * Math.sin(spherical.phi) * Math.sin(spherical.theta) + panOffset.x;
+  camera.position.y = distance * Math.cos(spherical.phi) + panOffset.y;
+  camera.position.z = distance * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+  camera.lookAt(panOffset.x, panOffset.y, 0);
+
+  // Update readout
+  const thetaDeg = ((spherical.theta * 180 / Math.PI) % 360).toFixed(0);
+  const phiDeg = ((spherical.phi * 180 / Math.PI) - 90).toFixed(0);
+  readout.textContent = `${thetaDeg}° / ${phiDeg}°`;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ─── Resize ───
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>

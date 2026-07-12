@@ -1,0 +1,99 @@
+/**
+ * Impose a leaf sequence onto printed sheet faces for saddle-folded
+ * signatures. Pure math: given a leaf count and sizes, produce a plan of
+ * faces, each a list of (leaf index, x offset) placements. Rendering walks
+ * the plan; nothing here draws anything.
+ *
+ * Ported from crosshair_print/imposition.py (fold_plan) and generalized from
+ * one folded stack to N signatures: the leaf sequence is split into
+ * consecutive runs, each imposed as its own saddle-fold booklet, and the
+ * bound book is the signatures stacked in order.
+ */
+
+export interface Placement {
+  /** Index into the book's leaf sequence, or null for a padding blank. */
+  leaf: number | null;
+  x: number;
+  y: number;
+}
+
+export interface SheetFace {
+  /** Which signature (0-based) this face belongs to. */
+  signature: number;
+  side: "front" | "back";
+  placements: Placement[];
+}
+
+export interface ImpositionPlan {
+  /** Printed page size in points (the unfolded sheet). */
+  sheetSize: { w: number; h: number };
+  leafSize: { w: number; h: number };
+  faces: SheetFace[];
+  /** Physical sheets in each signature. */
+  sheetsPerSignature: number[];
+  /** Total leaf slots including padding blanks. */
+  paddedLeafCount: number;
+}
+
+/**
+ * Split `totalSheets` physical sheets across `signatures` as evenly as
+ * possible, larger signatures first. Every signature gets at least one sheet,
+ * so fewer sheets than signatures collapses the signature count.
+ */
+export function splitSheets(totalSheets: number, signatures: number): number[] {
+  const count = Math.max(1, Math.min(signatures, totalSheets));
+  const base = Math.floor(totalSheets / count);
+  const extra = totalSheets % count;
+  return Array.from({ length: count }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
+/**
+ * Saddle-fold imposition for the whole book.
+ *
+ * Within a signature of N leaves (N a multiple of 4, padded with blanks),
+ * sheet k of the signature carries leaves (N-2k+2, 2k-1) on its front and
+ * (2k, N-2k+1) on its back (1-based), so folding the signature's stack in
+ * half yields correct reading order. Faces alternate front, back, front,
+ * back, so the PDF prints directly on a duplex printer.
+ */
+export function imposeSignatures(
+  leafCount: number,
+  signatures: number,
+  leafSize: { w: number; h: number },
+  sheetSize: { w: number; h: number },
+): ImpositionPlan {
+  const totalSheets = Math.max(1, Math.ceil(leafCount / 4));
+  const sheetsPerSignature = splitSheets(totalSheets, signatures);
+
+  const xLeft = (sheetSize.w - 2 * leafSize.w) / 2;
+  const xRight = xLeft + leafSize.w;
+  const y = (sheetSize.h - leafSize.h) / 2;
+  const slot = (index: number): number | null => (index < leafCount ? index : null);
+
+  const faces: SheetFace[] = [];
+  let start = 0; // First leaf index of the current signature.
+  sheetsPerSignature.forEach((sheets, signature) => {
+    const n = sheets * 4;
+    for (let k = 1; k <= sheets; k++) {
+      faces.push({
+        signature,
+        side: "front",
+        placements: [
+          { leaf: slot(start + n - 2 * k + 1), x: xLeft, y },
+          { leaf: slot(start + 2 * k - 2), x: xRight, y },
+        ],
+      });
+      faces.push({
+        signature,
+        side: "back",
+        placements: [
+          { leaf: slot(start + 2 * k - 1), x: xLeft, y },
+          { leaf: slot(start + n - 2 * k), x: xRight, y },
+        ],
+      });
+    }
+    start += n;
+  });
+
+  return { sheetSize, leafSize, faces, sheetsPerSignature, paddedLeafCount: start };
+}
