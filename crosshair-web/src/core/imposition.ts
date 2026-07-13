@@ -19,6 +19,8 @@ export const SHEETS_PER_SIGNATURE = 4;
 export interface Placement {
   /** Index into the book's leaf sequence, or null for a padding blank. */
   leaf: number | null;
+  /** Padded leaf slot in the whole book; set even for padding blanks. */
+  slot: number;
   x: number;
   y: number;
 }
@@ -64,7 +66,12 @@ export function imposeSignatures(
   const xLeft = (sheetSize.w - 2 * leafSize.w) / 2;
   const xRight = xLeft + leafSize.w;
   const y = (sheetSize.h - leafSize.h) / 2;
-  const slot = (index: number): number | null => (index < leafCount ? index : null);
+  const place = (slot: number, x: number): Placement => ({
+    leaf: slot < leafCount ? slot : null,
+    slot,
+    x,
+    y,
+  });
 
   const faces: SheetFace[] = [];
   let start = 0; // First leaf index of the current signature.
@@ -74,22 +81,33 @@ export function imposeSignatures(
       faces.push({
         signature,
         side: "front",
-        placements: [
-          { leaf: slot(start + n - 2 * k + 1), x: xLeft, y },
-          { leaf: slot(start + 2 * k - 2), x: xRight, y },
-        ],
+        placements: [place(start + n - 2 * k + 1, xLeft), place(start + 2 * k - 2, xRight)],
       });
       faces.push({
         signature,
         side: "back",
-        placements: [
-          { leaf: slot(start + 2 * k - 1), x: xLeft, y },
-          { leaf: slot(start + n - 2 * k), x: xRight, y },
-        ],
+        placements: [place(start + 2 * k - 1, xLeft), place(start + n - 2 * k, xRight)],
       });
     }
     start += n;
   });
 
   return { sheetSize, leafSize, faces, sheetsPerSignature, paddedLeafCount: start };
+}
+
+/**
+ * "Signature-item" tag geometry, in points from the leaf's lower fore-edge
+ * corner (away from the spine: lower-left on versos, lower-right on rectos).
+ * Both renderers use it; the color is mirrored in index.css.
+ */
+export const PAGE_LABEL_STYLE = { size: 5, inset: 6, gray: 0.45 };
+
+/**
+ * "Signature-item" page tag (both 1-based) for a padded leaf slot, e.g.
+ * "2-5" for the fifth page of the second signature. Printed on every page
+ * so a folded stack can be checked against its signature and order.
+ */
+export function pageLabel(slot: number): string {
+  const leavesPerSignature = SHEETS_PER_SIGNATURE * 4;
+  return `${Math.floor(slot / leavesPerSignature) + 1}-${(slot % leavesPerSignature) + 1}`;
 }

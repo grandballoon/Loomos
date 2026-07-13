@@ -8,12 +8,12 @@
  * matches the on-screen preview exactly.
  */
 
-import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, grayscale, rgb } from "pdf-lib";
 
 import { leafContentRect, type Leaf, type PageGeometry, contentBox } from "./book";
 import { effectShapes, type EffectSettings, type Rect } from "./effects";
 import { pdfImageBytes, type SourceImage } from "./images";
-import type { ImpositionPlan } from "./imposition";
+import { PAGE_LABEL_STYLE, pageLabel, type ImpositionPlan, type Placement } from "./imposition";
 
 const TITLE_STYLES: { bold: boolean; size: number }[] = [
   { bold: true, size: 16 },
@@ -49,6 +49,9 @@ export async function renderBookPdf(input: RenderInput): Promise<Uint8Array> {
   for (const face of input.plan.faces) {
     const page = doc.addPage([input.plan.sheetSize.w, input.plan.sheetSize.h]);
     for (const placement of face.placements) {
+      // Padding blanks still get their tag; it is what identifies them
+      // when collating signatures.
+      drawPageLabel(page, placement, fonts.regular, input.plan.leafSize.w);
       if (placement.leaf === null) continue;
       const leaf = input.leaves[placement.leaf];
       if (!leaf) continue;
@@ -57,6 +60,23 @@ export async function renderBookPdf(input: RenderInput): Promise<Uint8Array> {
   }
 
   return doc.save();
+}
+
+function drawPageLabel(page: PDFPage, placement: Placement, font: PDFFont, leafW: number): void {
+  const text = pageLabel(placement.slot);
+  // Even slots are rectos (spine on the left), so their fore edge is on the
+  // right and the tag right-aligns there; versos mirror it on the left.
+  const recto = placement.slot % 2 === 0;
+  const x = recto
+    ? placement.x + leafW - PAGE_LABEL_STYLE.inset - font.widthOfTextAtSize(text, PAGE_LABEL_STYLE.size)
+    : placement.x + PAGE_LABEL_STYLE.inset;
+  page.drawText(text, {
+    x,
+    y: placement.y + PAGE_LABEL_STYLE.inset,
+    size: PAGE_LABEL_STYLE.size,
+    font,
+    color: grayscale(PAGE_LABEL_STYLE.gray),
+  });
 }
 
 function drawLeaf(

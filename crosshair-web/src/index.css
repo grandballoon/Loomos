@@ -603,3 +603,8 @@ body {
   font-family: Helvetica, Arial, sans-serif;
   fill: var(--ink);
 }
+
+.leaf-pagenum {
+  font-family: Helvetica, Arial, sans-serif;
+  fill: #737373; /* grayscale(0.45), matching the PDF renderer */
+}

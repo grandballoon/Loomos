@@ -12,7 +12,7 @@ import { useMemo, useState, type ReactNode } from "react";
 
 import { contentBox, leafContentRect, type Leaf, type PageGeometry } from "../core/book";
 import { effectShapes, type EffectSettings, type Shape } from "../core/effects";
-import type { ImpositionPlan } from "../core/imposition";
+import { PAGE_LABEL_STYLE, pageLabel, type ImpositionPlan } from "../core/imposition";
 import type { ImageItem } from "../state";
 
 const TITLE_STYLES = [
@@ -51,6 +51,28 @@ function shapeToSvg(shape: Shape, flipY: (y: number) => number, key: number, str
         />
       );
   }
+}
+
+/** "Signature-item" tag at the lower fore-edge corner of the leaf at (ox, oy). */
+function PageLabel(props: { slot: number; ox: number; oy: number; faceH: number; leafW: number }) {
+  // Even slots are rectos (spine on the left), so their fore edge is on the
+  // right and the tag right-aligns there; versos mirror it on the left.
+  const recto = props.slot % 2 === 0;
+  return (
+    <text
+      x={
+        recto
+          ? props.ox + props.leafW - PAGE_LABEL_STYLE.inset
+          : props.ox + PAGE_LABEL_STYLE.inset
+      }
+      y={props.faceH - (props.oy + PAGE_LABEL_STYLE.inset)}
+      fontSize={PAGE_LABEL_STYLE.size}
+      textAnchor={recto ? "end" : "start"}
+      className="leaf-pagenum"
+    >
+      {pageLabel(props.slot)}
+    </text>
+  );
 }
 
 /** One leaf drawn at (ox, oy) in PDF coords on a face of height faceH. */
@@ -229,6 +251,24 @@ export function Preview(props: {
                   oy={0}
                   faceH={geometry.height}
                 />
+                {left !== null && (
+                  <PageLabel
+                    slot={left}
+                    ox={0}
+                    oy={0}
+                    faceH={geometry.height}
+                    leafW={geometry.width}
+                  />
+                )}
+                {right !== null && (
+                  <PageLabel
+                    slot={right}
+                    ox={geometry.width}
+                    oy={0}
+                    faceH={geometry.height}
+                    leafW={geometry.width}
+                  />
+                )}
                 <line
                   x1={geometry.width}
                   y1={0}
@@ -259,17 +299,25 @@ export function Preview(props: {
                   height={plan.sheetSize.h}
                   className="sheet-outline"
                 />
-                {face.placements.map((placement, slot) => (
-                  <LeafGroup
-                    key={slot}
-                    leaf={placement.leaf !== null ? leaves[placement.leaf] ?? null : null}
-                    geometry={geometry}
-                    images={props.images}
-                    effectSettings={props.effectSettings}
-                    ox={placement.x}
-                    oy={placement.y}
-                    faceH={plan.sheetSize.h}
-                  />
+                {face.placements.map((placement, index) => (
+                  <g key={index}>
+                    <LeafGroup
+                      leaf={placement.leaf !== null ? leaves[placement.leaf] ?? null : null}
+                      geometry={geometry}
+                      images={props.images}
+                      effectSettings={props.effectSettings}
+                      ox={placement.x}
+                      oy={placement.y}
+                      faceH={plan.sheetSize.h}
+                    />
+                    <PageLabel
+                      slot={placement.slot}
+                      ox={placement.x}
+                      oy={placement.y}
+                      faceH={plan.sheetSize.h}
+                      leafW={geometry.width}
+                    />
+                  </g>
                 ))}
                 <line
                   x1={plan.sheetSize.w / 2}
