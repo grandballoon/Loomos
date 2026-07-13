@@ -134,27 +134,75 @@ export async function collectDrop(items: DataTransferItemList): Promise<DropResu
 }
 
 /**
- * Bytes ready for pdf-lib: PNG and JPEG pass through untouched; everything
- * else is re-encoded to PNG via canvas.
+ * EXIF orientation (1–8) of a JPEG, or 1 when absent or unreadable. pdf-lib
+ * embeds raw JPEG pixels and ignores EXIF, while the browser preview applies
+ * it, so any value above 1 means the bytes must be re-encoded before
+ * embedding or the PDF would not match the preview.
  */
-export async function pdfImageBytes(
-  source: SourceImage,
-): Promise<{ bytes: Uint8Array; format: "png" | "jpg" }> {
-  const type = source.file.type;
-  if (type === "image/jpeg") {
-    return { bytes: new Uint8Array(await source.file.arrayBuffer()), format: "jpg" };
+function jpegExifOrientation(buffer: ArrayBuffer): number {
+  const view = new DataView(buffer);
+  if (view.byteLength < 4 || view.getUint16(0) !== 0xffd8) return 1;
+  let offset = 2;
+  while (offset + 4 <= view.byteLength) {
+    const marker = view.getUint16(offset);
+    if ((marker & 0xff00) !== 0xff00 || marker === 0xffda) return 1; // start of scan: no EXIF ahead
+    const size = view.getUint16(offset + 2);
+    if (size < 2) return 1;
+    if (
+      marker === 0xffe1 &&
+      offset + 12 <= view.byteLength &&
+      view.getUint32(offset + 4) === 0x45786966 && // "Exif"
+      view.getUint16(offset + 8) === 0
+    ) {
+      const tiff = offset + 10;
+      const little = view.getUint16(tiff) === 0x4949; // "II"
+      const ifd = tiff + view.getUint32(tiff + 4, little);
+      if (ifd + 2 > view.byteLength) return 1;
+      const entries = view.getUint16(ifd, little);
+      for (let i = 0; i < entries; i++) {
+        const entry = ifd + 2 + i * 12;
+        if (entry + 12 > view.byteLength) return 1;
+        if (view.getUint16(entry, little) === 0x0112) return view.getUint16(entry + 8, little);
+      }
+      return 1;
+    }
+    offset += 2 + size;
   }
-  if (type === "image/png") {
-    return { bytes: new Uint8Array(await source.file.arrayBuffer()), format: "png" };
-  }
-  const bitmap = await createImageBitmap(source.file);
+  return 1;
+}
+
+/** Rasterize through a canvas, baking in EXIF orientation, and re-encode. */
+async function reencode(file: File, mime: "image/png" | "image/jpeg"): Promise<Uint8Array> {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   const canvas = document.createElement("canvas");
   canvas.width = bitmap.width;
   canvas.height = bitmap.height;
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0);
   bitmap.close();
   const blob = await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("PNG encode failed"))), "image/png"),
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(`${mime} encode failed`))), mime, 0.92),
   );
-  return { bytes: new Uint8Array(await blob.arrayBuffer()), format: "png" };
+  return new Uint8Array(await blob.arrayBuffer());
+}
+
+/**
+ * Bytes ready for pdf-lib: upright PNG and JPEG pass through untouched;
+ * EXIF-rotated JPEGs are re-encoded (still as JPEG) with the rotation baked
+ * in, and everything else is re-encoded to PNG via canvas.
+ */
+export async function pdfImageBytes(
+  source: SourceImage,
+): Promise<{ bytes: Uint8Array; format: "png" | "jpg" }> {
+  const type = source.file.type;
+  if (type === "image/jpeg") {
+    const buffer = await source.file.arrayBuffer();
+    if (jpegExifOrientation(buffer) === 1) {
+      return { bytes: new Uint8Array(buffer), format: "jpg" };
+    }
+    return { bytes: await reencode(source.file, "image/jpeg"), format: "jpg" };
+  }
+  if (type === "image/png") {
+    return { bytes: new Uint8Array(await source.file.arrayBuffer()), format: "png" };
+  }
+  return { bytes: await reencode(source.file, "image/png"), format: "png" };
 }

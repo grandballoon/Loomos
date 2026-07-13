@@ -99,8 +99,13 @@ export function imposeSignatures(
  * "Signature-item" tag geometry, in points from the leaf's lower fore-edge
  * corner (away from the spine: lower-left on versos, lower-right on rectos).
  * Both renderers use it; the color is mirrored in index.css.
+ *
+ * Leaf edges coincide with paper edges, so the inset must clear the
+ * unprintable border of common printers (~4–5 mm): 14 pt ≈ 4.9 mm keeps the
+ * tag printable while its cap height (~17.6 pt) still fits under the default
+ * 18 pt page margin.
  */
-export const PAGE_LABEL_STYLE = { size: 5, inset: 6, gray: 0.45 };
+export const PAGE_LABEL_STYLE = { size: 5, inset: 14, gray: 0.45 };
 
 /**
  * "Signature-item" page tag (both 1-based) for a padded leaf slot, e.g.
