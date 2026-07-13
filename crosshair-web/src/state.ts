@@ -17,9 +17,6 @@ export interface Settings {
   /** Printed (unfolded) sheet size in points; leaves are half the width. */
   sheetW: number;
   sheetH: number;
-  signatures: number;
-  /** One folded sheet (4 pages) per signature; overrides the count. */
-  fourPageSignatures: boolean;
   /** Outer margin (head, foot, fore edge) in points. */
   margin: number;
   /** Spine-side margin in points. */
@@ -75,8 +72,6 @@ export const DEFAULT_SETTINGS: Settings = {
   unit: "in",
   sheetW: PAGE_PRESETS[0].sheetW,
   sheetH: PAGE_PRESETS[0].sheetH,
-  signatures: 1,
-  fourPageSignatures: true,
   margin: toPoints(0.25, "in"),
   gutter: toPoints(0.5, "in"),
   facingPages: true,

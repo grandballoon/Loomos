@@ -10,6 +10,12 @@
  * bound book is the signatures stacked in order.
  */
 
+/**
+ * Physical sheets stapled together per signature. The book is padded with
+ * blank leaves so every signature is exactly this size.
+ */
+export const SHEETS_PER_SIGNATURE = 4;
+
 export interface Placement {
   /** Index into the book's leaf sequence, or null for a padding blank. */
   leaf: number | null;
@@ -36,19 +42,9 @@ export interface ImpositionPlan {
 }
 
 /**
- * Split `totalSheets` physical sheets across `signatures` as evenly as
- * possible, larger signatures first. Every signature gets at least one sheet,
- * so fewer sheets than signatures collapses the signature count.
- */
-export function splitSheets(totalSheets: number, signatures: number): number[] {
-  const count = Math.max(1, Math.min(signatures, totalSheets));
-  const base = Math.floor(totalSheets / count);
-  const extra = totalSheets % count;
-  return Array.from({ length: count }, (_, i) => base + (i < extra ? 1 : 0));
-}
-
-/**
- * Saddle-fold imposition for the whole book.
+ * Saddle-fold imposition for the whole book, in signatures of exactly
+ * SHEETS_PER_SIGNATURE sheets (the book is padded with blanks to fill the
+ * last signature).
  *
  * Within a signature of N leaves (N a multiple of 4, padded with blanks),
  * sheet k of the signature carries leaves (N-2k+2, 2k-1) on its front and
@@ -58,12 +54,12 @@ export function splitSheets(totalSheets: number, signatures: number): number[] {
  */
 export function imposeSignatures(
   leafCount: number,
-  signatures: number,
   leafSize: { w: number; h: number },
   sheetSize: { w: number; h: number },
 ): ImpositionPlan {
   const totalSheets = Math.max(1, Math.ceil(leafCount / 4));
-  const sheetsPerSignature = splitSheets(totalSheets, signatures);
+  const signatureCount = Math.ceil(totalSheets / SHEETS_PER_SIGNATURE);
+  const sheetsPerSignature = Array.from({ length: signatureCount }, () => SHEETS_PER_SIGNATURE);
 
   const xLeft = (sheetSize.w - 2 * leafSize.w) / 2;
   const xRight = xLeft + leafSize.w;

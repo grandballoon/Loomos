@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 
 import { assembleBook, type PageGeometry } from "./core/book";
 import { collectDrop } from "./core/images";
-import { imposeSignatures } from "./core/imposition";
+import { imposeSignatures, SHEETS_PER_SIGNATURE } from "./core/imposition";
 import { formatLength } from "./core/lengths";
 import { DEFAULT_SETTINGS, type ImageItem, type Settings } from "./state";
 import { ImageList } from "./ui/ImageList";
@@ -39,9 +39,7 @@ export default function App() {
   // Mirrors assembleBook's leaf count: cover + one or two leaves per image.
   const leafCount = 1 + items.length * (settings.facingPages ? 2 : 1);
   const sheetCount = Math.max(1, Math.ceil(leafCount / 4));
-  const signatureCount = settings.fourPageSignatures
-    ? sheetCount
-    : Math.max(1, Math.min(settings.signatures, sheetCount));
+  const signatureCount = Math.ceil(sheetCount / SHEETS_PER_SIGNATURE);
 
   const leaves = useMemo(
     () =>
@@ -69,11 +67,10 @@ export default function App() {
     () =>
       imposeSignatures(
         leaves.length,
-        signatureCount,
         { w: geometry.width, h: geometry.height },
         { w: settings.sheetW, h: settings.sheetH },
       ),
-    [leaves.length, signatureCount, geometry, settings.sheetW, settings.sheetH],
+    [leaves.length, geometry, settings.sheetW, settings.sheetH],
   );
 
   const addImages = useCallback(
@@ -181,11 +178,7 @@ export default function App() {
               </div>
               <div>
                 <dt>Signatures</dt>
-                <dd>
-                  {plan.sheetsPerSignature.length}
-                  {plan.sheetsPerSignature.length > 1 &&
-                    ` (${plan.sheetsPerSignature.join("+")} sheets)`}
-                </dd>
+                <dd>{plan.sheetsPerSignature.length}</dd>
               </div>
             </dl>
             <button

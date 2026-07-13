@@ -1,7 +1,8 @@
 import { EFFECT_KINDS, EFFECT_LABELS, type EffectKind } from "../core/effects";
+import { SHEETS_PER_SIGNATURE } from "../core/imposition";
 import { UNITS, type Unit } from "../core/lengths";
 import { PAGE_PRESETS, type Settings } from "../state";
-import { LengthField, NumberField, SelectField, ToggleField } from "./fields";
+import { LengthField, SelectField, ToggleField } from "./fields";
 
 function rgbToHex({ r, g, b }: { r: number; g: number; b: number }): string {
   const channel = (v: number) =>
@@ -78,22 +79,9 @@ export function SettingsPanel(props: {
 
       <section className="settings-section">
         <h2 className="section-title">Binding</h2>
-        <ToggleField
-          label="4-page signatures"
-          checked={settings.fourPageSignatures}
-          onChange={(fourPageSignatures) => set({ fourPageSignatures })}
-        />
-        {settings.fourPageSignatures ? (
-          <p className="section-note">One folded sheet per signature.</p>
-        ) : (
-          <NumberField
-            label="Signatures"
-            value={settings.signatures}
-            min={1}
-            max={64}
-            onChange={(signatures) => set({ signatures })}
-          />
-        )}
+        <p className="section-note">
+          Bound in signatures of {SHEETS_PER_SIGNATURE} sheets, padded with blank pages.
+        </p>
         <LengthField
           label="Margin"
           points={settings.margin}
