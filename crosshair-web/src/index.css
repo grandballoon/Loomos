@@ -83,6 +83,11 @@ body {
   text-align: right;
 }
 
+.mode-tabs {
+  flex: none;
+  align-self: center;
+}
+
 /* ---------- layout ---------- */
 
 .columns {
@@ -306,6 +311,13 @@ body {
 .export-button:disabled {
   background: var(--hairline);
   cursor: not-allowed;
+}
+
+.export-error {
+  margin: 0;
+  font-size: 11px;
+  color: var(--red);
+  line-height: 1.5;
 }
 
 .print-note {

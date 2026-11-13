@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import type { Rgb } from "../core/effects";
 import { formatLength, toPoints, type Unit } from "../core/lengths";
 
 /**
@@ -120,6 +121,37 @@ export function ToggleField(props: {
         onChange={(event) => props.onChange(event.target.checked)}
       />
       <span className="toggle-visual" aria-hidden="true" />
+    </label>
+  );
+}
+
+function rgbToHex({ r, g, b }: Rgb): string {
+  const channel = (v: number) =>
+    Math.round(v * 255)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${channel(r)}${channel(g)}${channel(b)}`;
+}
+
+function hexToRgb(hex: string): Rgb {
+  return {
+    r: parseInt(hex.slice(1, 3), 16) / 255,
+    g: parseInt(hex.slice(3, 5), 16) / 255,
+    b: parseInt(hex.slice(5, 7), 16) / 255,
+  };
+}
+
+export function ColorField(props: { label: string; value: Rgb; onChange: (value: Rgb) => void }) {
+  return (
+    <label className="field">
+      <span className="field-label">{props.label}</span>
+      <span className="field-input">
+        <input
+          type="color"
+          value={rgbToHex(props.value)}
+          onChange={(event) => props.onChange(hexToRgb(event.target.value))}
+        />
+      </span>
     </label>
   );
 }

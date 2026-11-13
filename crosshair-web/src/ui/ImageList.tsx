@@ -4,7 +4,8 @@ import type { ImageItem } from "../state";
 
 export function ImageList(props: {
   items: ImageItem[];
-  onEffectChange: (index: number, effect: EffectKind) => void;
+  /** Per-image effect picker; omitted when the press has no per-image effect. */
+  onEffectChange?: (index: number, effect: EffectKind) => void;
   onMove: (index: number, delta: -1 | 1) => void;
   onRemove: (index: number) => void;
 }) {
@@ -22,11 +23,12 @@ export function ImageList(props: {
               {item.source.width}×{item.source.height}px
             </span>
           </span>
+          {props.onEffectChange && (
           <select
             className="image-effect"
             value={item.effect}
             aria-label={`Effect for ${item.source.name}`}
-            onChange={(event) => props.onEffectChange(index, event.target.value as EffectKind)}
+            onChange={(event) => props.onEffectChange?.(index, event.target.value as EffectKind)}
           >
             {EFFECT_KINDS.map((kind) => (
               <option key={kind} value={kind}>
@@ -34,6 +36,7 @@ export function ImageList(props: {
               </option>
             ))}
           </select>
+          )}
           <span className="image-actions">
             <button
               type="button"

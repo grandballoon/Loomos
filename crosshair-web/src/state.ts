@@ -3,7 +3,13 @@
  * UI converts to and from the display unit at the input boundary.
  */
 
-import { DEFAULT_EFFECT_SETTINGS, type EffectKind, type EffectSettings } from "./core/effects";
+import { NOTEBOOK_PRESETS, PRINTER_PRESETS, type Size } from "./core/cards";
+import {
+  DEFAULT_EFFECT_SETTINGS,
+  type EffectKind,
+  type EffectSettings,
+  type Rgb,
+} from "./core/effects";
 import type { SourceImage } from "./core/images";
 import { toPoints, type Unit } from "./core/lengths";
 
@@ -79,4 +85,49 @@ export const DEFAULT_SETTINGS: Settings = {
   title: "Sketchbook",
   defaultEffect: "crosshair",
   effectSettings: DEFAULT_EFFECT_SETTINGS,
+};
+
+/** Which press the app is in: card sheets (default) or the bound book. */
+export type Mode = "cards" | "book";
+
+/** Guides to draw over each card's art, plus the flip-tab layout option. */
+export interface CardFeatures {
+  cornerX: boolean;
+  crosshair: boolean;
+  grid: boolean;
+  flipTab: boolean;
+}
+
+export interface CardSettings {
+  unit: Unit;
+  /** Notebook page size (portrait), points. */
+  notebook: Size;
+  /** Printer paper size, points. */
+  sheet: Size;
+  /** Unprintable printer border kept clear of cards. */
+  margin: number;
+  /** White space between the cut line and the image. */
+  padding: number;
+  features: CardFeatures;
+  /** Flip-tab strip height below the art. */
+  tabHeight: number;
+  gridSpacing: number;
+  /** Crop images to fill the card instead of fitting them whole. */
+  fill: boolean;
+  guideColor: Rgb;
+  guideThickness: number;
+}
+
+export const DEFAULT_CARD_SETTINGS: CardSettings = {
+  unit: "in",
+  notebook: NOTEBOOK_PRESETS.find((preset) => preset.name === "a6")!.size,
+  sheet: PRINTER_PRESETS[0].size,
+  margin: toPoints(5, "mm"),
+  padding: toPoints(2.5, "mm"),
+  features: { cornerX: true, crosshair: false, grid: false, flipTab: false },
+  tabHeight: toPoints(1, "in"),
+  gridSpacing: toPoints(0.5, "in"),
+  fill: false,
+  guideColor: DEFAULT_EFFECT_SETTINGS.color,
+  guideThickness: DEFAULT_EFFECT_SETTINGS.thickness,
 };

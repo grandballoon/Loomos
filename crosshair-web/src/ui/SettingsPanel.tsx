@@ -2,23 +2,7 @@ import { EFFECT_KINDS, EFFECT_LABELS, type EffectKind } from "../core/effects";
 import { SHEETS_PER_SIGNATURE } from "../core/imposition";
 import { UNITS, type Unit } from "../core/lengths";
 import { PAGE_PRESETS, type Settings } from "../state";
-import { LengthField, SelectField, ToggleField } from "./fields";
-
-function rgbToHex({ r, g, b }: { r: number; g: number; b: number }): string {
-  const channel = (v: number) =>
-    Math.round(v * 255)
-      .toString(16)
-      .padStart(2, "0");
-  return `#${channel(r)}${channel(g)}${channel(b)}`;
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  return {
-    r: parseInt(hex.slice(1, 3), 16) / 255,
-    g: parseInt(hex.slice(3, 5), 16) / 255,
-    b: parseInt(hex.slice(5, 7), 16) / 255,
-  };
-}
+import { ColorField, LengthField, SelectField, ToggleField } from "./fields";
 
 export function SettingsPanel(props: {
   settings: Settings;
@@ -133,16 +117,11 @@ export function SettingsPanel(props: {
           }))}
           onChange={(defaultEffect) => set({ defaultEffect })}
         />
-        <label className="field">
-          <span className="field-label">Color</span>
-          <span className="field-input">
-            <input
-              type="color"
-              value={rgbToHex(settings.effectSettings.color)}
-              onChange={(event) => setEffect({ color: hexToRgb(event.target.value) })}
-            />
-          </span>
-        </label>
+        <ColorField
+          label="Color"
+          value={settings.effectSettings.color}
+          onChange={(color) => setEffect({ color })}
+        />
         <LengthField
           label="Line thickness"
           points={settings.effectSettings.thickness}

@@ -4,6 +4,8 @@
  * the CLI's discovery rules); hidden files and non-raster files are skipped.
  */
 
+import { rasterPlan, type ImagePlacement } from "./cards";
+
 export interface SourceImage {
   id: string;
   name: string;
@@ -205,4 +207,52 @@ export async function pdfImageBytes(
     return { bytes: new Uint8Array(await source.file.arrayBuffer()), format: "png" };
   }
   return { bytes: await reencode(source.file, "image/png"), format: "png" };
+}
+
+/**
+ * Bytes for one placed card image: cropped, turned 90° counter-clockwise
+ * when the plan says so, and resampled to the plan's output size (EXIF
+ * orientation baked in). Untouched images pass through without re-encoding.
+ * Sources with possible transparency stay PNG; everything else is JPEG.
+ */
+export async function placedImageBytes(
+  source: SourceImage,
+  placement: ImagePlacement,
+  dpi: number,
+): Promise<{ bytes: Uint8Array; format: "png" | "jpg" }> {
+  const bitmap = await createImageBitmap(source.file, { imageOrientation: "from-image" });
+  try {
+    const plan = rasterPlan(placement, bitmap.width, bitmap.height, dpi);
+    const untouched =
+      !plan.rotate &&
+      plan.sx === 0 &&
+      plan.sy === 0 &&
+      plan.sw === bitmap.width &&
+      plan.sh === bitmap.height &&
+      plan.outW === bitmap.width &&
+      plan.outH === bitmap.height;
+    if (untouched) return pdfImageBytes(source);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = plan.outW;
+    canvas.height = plan.outH;
+    const ctx = canvas.getContext("2d")!;
+    ctx.imageSmoothingQuality = "high";
+    if (plan.rotate) {
+      // Counter-clockwise: the source's top edge lands on the left.
+      ctx.translate(0, plan.outH);
+      ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(bitmap, plan.sx, plan.sy, plan.sw, plan.sh, 0, 0, plan.outH, plan.outW);
+    } else {
+      ctx.drawImage(bitmap, plan.sx, plan.sy, plan.sw, plan.sh, 0, 0, plan.outW, plan.outH);
+    }
+    const png = source.file.type !== "image/jpeg";
+    const mime = png ? "image/png" : "image/jpeg";
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(`${mime} encode failed`))), mime, 0.92),
+    );
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), format: png ? "png" : "jpg" };
+  } finally {
+    bitmap.close();
+  }
 }

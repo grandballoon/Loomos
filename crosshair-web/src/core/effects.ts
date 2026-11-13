@@ -77,7 +77,7 @@ const EDGE_EPSILON = 0.05;
  * `inclusive` keeps offsets landing on the boundary (dot lattices want the
  * edges; line grids drop them because the edge belongs to the border rect).
  */
-function centeredOffsets(halfExtent: number, step: number, inclusive: boolean): number[] {
+export function centeredOffsets(halfExtent: number, step: number, inclusive: boolean): number[] {
   const limit = inclusive ? halfExtent + EDGE_EPSILON : halfExtent - EDGE_EPSILON;
   const offsets = [0];
   for (let k = 1; k * step <= limit; k++) {

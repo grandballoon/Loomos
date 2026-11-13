@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "crosshair-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "crosshair-web", "run", "dev", "--", "--port", "5173", "--strictPort"],
+      "port": 5173
+    }
+  ]
+}
