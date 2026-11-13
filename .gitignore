@@ -16,3 +16,6 @@ experiments/outputs/
 
 # Lavish review sessions
 .lavish/
+
+# UI feedback notes left at /ui-feedback (dev only)
+crosshair-web/ui-feedback.json

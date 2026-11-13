@@ -44,6 +44,18 @@ Print the exported PDF one-sided at Scale 100% / actual size, never "fit to page
 
 Print the exported PDF two-sided, flip on short edge, Scale 100%.
 
+## UI feedback (dev only)
+
+Open the dev server at `/ui-feedback` (e.g. http://localhost:5173/ui-feedback) to turn on the feedback overlay.
+Hold ⌥ (Alt) to highlight what is under the pointer, and ⌥-click to leave a note on it.
+Notes are saved to `ui-feedback.json` (gitignored) with the element's selector and the React source file:line that rendered it.
+Ask Claude to "pull UI feedback" (the `ui-feedback` skill in `.claude/skills/`) to act on them; resolved notes show struck through in the overlay's list.
+The overlay and its endpoint exist only in the dev server; the production build contains none of it.
+
+- `feedback/core.ts` — pure note model, validation and file format.
+- `feedback/plugin.ts` — Vite dev-server endpoint at `/__ui-feedback`.
+- `src/dev/feedback/` — the overlay (element inspection, notes panel).
+
 ## Layout of `src/`
 
 Functional core in `core/`, imperative shell in `core/*Pdf.ts`, `core/images.ts` and the React UI.
