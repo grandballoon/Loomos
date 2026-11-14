@@ -7,7 +7,8 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 
 import { assembleBook, type PageGeometry } from "../core/book";
-import { imposeSignatures, SHEETS_PER_SIGNATURE } from "../core/imposition";
+import { BINDING_INFO, bindingWarnings, bookStructure } from "../core/binding";
+import { imposeSignatures } from "../core/imposition";
 import { formatLength } from "../core/lengths";
 import type { ImageItem, Settings } from "../state";
 import { downloadPdf, slugify } from "./download";
@@ -18,7 +19,9 @@ export function BookWorkspace(props: {
   items: ImageItem[];
   settings: Settings;
   onSettingsChange: (settings: Settings) => void;
-  /** Notices, image list or dropzone, rendered above the preview. */
+  /** Intake notices, rendered first. */
+  notices: ReactNode;
+  /** Image list or dropzone, rendered below the preview. */
   imagePanel: ReactNode;
 }) {
   const { items, settings } = props;
@@ -36,8 +39,12 @@ export function BookWorkspace(props: {
 
   // Mirrors assembleBook's leaf count: cover + one or two leaves per image.
   const leafCount = 1 + items.length * (settings.facingPages ? 2 : 1);
-  const sheetCount = Math.max(1, Math.ceil(leafCount / 4));
-  const signatureCount = Math.ceil(sheetCount / SHEETS_PER_SIGNATURE);
+  const structure = useMemo(
+    () => bookStructure(settings.binding, leafCount),
+    [settings.binding, leafCount],
+  );
+  const signatureCount = structure.signatureCount;
+  const warnings = bindingWarnings(settings.binding, structure);
 
   const leaves = useMemo(
     () =>
@@ -67,8 +74,9 @@ export function BookWorkspace(props: {
         leaves.length,
         { w: geometry.width, h: geometry.height },
         { w: settings.sheetW, h: settings.sheetH },
+        structure,
       ),
-    [leaves.length, geometry, settings.sheetW, settings.sheetH],
+    [leaves.length, geometry, settings.sheetW, settings.sheetH, structure],
   );
 
   const handleExport = useCallback(async () => {
@@ -122,15 +130,21 @@ export function BookWorkspace(props: {
           >
             {exporting ? "Pressing…" : "Export print PDF"}
           </button>
-          <p className="print-note">
-            Print two-sided, flip on short edge, Scale 100%. Fold each signature in half, nest its
-            sheets, stack signatures in order, staple at the fold.
-          </p>
+          {warnings.map((warning) => (
+            <p className="export-error" role="alert" key={warning}>
+              {warning}
+            </p>
+          ))}
+          <ol className="print-note print-steps">
+            {BINDING_INFO[settings.binding].steps.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ol>
         </div>
       </aside>
 
       <main className="content">
-        {props.imagePanel}
+        {props.notices}
         {items.length > 0 && (
           <section className="panel">
             <Preview
@@ -139,9 +153,12 @@ export function BookWorkspace(props: {
               geometry={geometry}
               images={items}
               effectSettings={settings.effectSettings}
+              structure={structure}
+              method={settings.binding}
             />
           </section>
         )}
+        {props.imagePanel}
       </main>
     </div>
   );

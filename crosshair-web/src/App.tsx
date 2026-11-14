@@ -6,7 +6,9 @@
 
 import { useCallback, useRef, useState } from "react";
 
+import { EFFECT_KINDS, EFFECT_LABELS, type EffectKind } from "./core/effects";
 import { collectDrop, type DropResult } from "./core/images";
+import { moveItem, setAllEffects, setEffectAt, sharedEffect } from "./items";
 import {
   DEFAULT_CARD_SETTINGS,
   DEFAULT_SETTINGS,
@@ -65,16 +67,24 @@ export default function App() {
     [addImages],
   );
 
+  // Applying an effect to every image also makes it the default for images
+  // added later, so the whole folder stays consistent.
+  const applyEffectToAll = (effect: EffectKind) => {
+    setItems((current) => setAllEffects(current, effect));
+    setSettings((current) => ({ ...current, defaultEffect: effect }));
+  };
+  const allEffect = sharedEffect(items);
+
+  const noticePanel = notices.length > 0 && (
+    <div className="notices" role="status">
+      {notices.map((notice) => (
+        <p key={notice}>Skipped: {notice}</p>
+      ))}
+    </div>
+  );
+
   const imagePanel = (
     <>
-      {notices.length > 0 && (
-        <div className="notices" role="status">
-          {notices.map((notice) => (
-            <p key={notice}>Skipped: {notice}</p>
-          ))}
-        </div>
-      )}
-
       {items.length === 0 ? (
         <button className="dropzone" type="button" onClick={() => fileInput.current?.click()}>
           <svg className="dropzone-mark" viewBox="0 0 120 120" aria-hidden="true">
@@ -89,6 +99,28 @@ export default function App() {
         <section className="panel">
           <div className="panel-head">
             <h2 className="section-title">Plates</h2>
+            {mode === "book" && (
+              <label className="apply-all">
+                <span className="apply-all-label">All</span>
+                <select
+                  className="image-effect"
+                  value={allEffect ?? "mixed"}
+                  aria-label="Effect for all images"
+                  onChange={(event) => applyEffectToAll(event.target.value as EffectKind)}
+                >
+                  {allEffect === undefined && (
+                    <option value="mixed" disabled>
+                      Mixed
+                    </option>
+                  )}
+                  {EFFECT_KINDS.map((kind) => (
+                    <option key={kind} value={kind}>
+                      {EFFECT_LABELS[kind]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <button className="ghost-button" onClick={() => fileInput.current?.click()}>
               + Add images
             </button>
@@ -97,20 +129,10 @@ export default function App() {
             items={items}
             onEffectChange={
               mode === "book"
-                ? (index, effect) =>
-                    setItems((current) =>
-                      current.map((item, i) => (i === index ? { ...item, effect } : item)),
-                    )
+                ? (index, effect) => setItems((current) => setEffectAt(current, index, effect))
                 : undefined
             }
-            onMove={(index, delta) =>
-              setItems((current) => {
-                const next = [...current];
-                const [moved] = next.splice(index, 1);
-                next.splice(index + delta, 0, moved);
-                return next;
-              })
-            }
+            onMove={(index, delta) => setItems((current) => moveItem(current, index, delta))}
             onRemove={(index) =>
               setItems((current) => {
                 URL.revokeObjectURL(current[index].source.url);
@@ -174,6 +196,7 @@ export default function App() {
           settings={cardSettings}
           onSettingsChange={setCardSettings}
           folderName={folderName}
+          notices={noticePanel}
           imagePanel={imagePanel}
         />
       ) : (
@@ -181,6 +204,7 @@ export default function App() {
           items={items}
           settings={settings}
           onSettingsChange={setSettings}
+          notices={noticePanel}
           imagePanel={imagePanel}
         />
       )}

@@ -327,6 +327,14 @@ body {
   line-height: 1.55;
 }
 
+.print-steps {
+  padding-left: 18px;
+}
+
+.print-steps li + li {
+  margin-top: 3px;
+}
+
 /* ---------- dropzone ---------- */
 
 .dropzone {
@@ -404,6 +412,20 @@ body {
 
 .panel-head .section-title {
   flex: 1;
+}
+
+.apply-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.apply-all-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
 .ghost-button {
@@ -605,6 +627,10 @@ body {
   stroke-width: 0.75;
 }
 
+.spine-line.seam {
+  stroke: var(--ink-soft);
+}
+
 .fold-line {
   stroke: var(--ink-soft);
   stroke-width: 0.5;
@@ -619,4 +645,447 @@ body {
 .leaf-pagenum {
   font-family: Helvetica, Arial, sans-serif;
   fill: #737373; /* grayscale(0.45), matching the PDF renderer */
+}
+
+/* ---------- finished-book viewer ---------- */
+
+.book-viewer {
+  --board: #3d3a33;
+  --gutter-shade: 0.16;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  outline: none;
+}
+
+.book-viewer[data-opens-flat="false"] {
+  --gutter-shade: 0.3;
+}
+
+.book-viewer[data-binding="saddle"] {
+  --gutter-shade: 0.1;
+}
+
+.book-viewer:focus-visible .book-stage {
+  outline: 1px solid var(--red);
+  outline-offset: 4px;
+}
+
+.book-stage {
+  width: 100%;
+  max-width: 920px;
+  padding: 16px 22px;
+}
+
+.book-spread {
+  position: relative;
+  width: 100%;
+  perspective: 2400px;
+}
+
+.book-half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  cursor: pointer;
+}
+
+.book-half.left {
+  left: 0;
+}
+
+.book-half.right {
+  right: 0;
+}
+
+.book-half.empty {
+  cursor: default;
+}
+
+.book-page {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Stacked page edges: one stripe per few leaves, on the outer side. */
+.book-edges {
+  position: absolute;
+  top: 2px;
+  bottom: -2px;
+  width: var(--edge);
+  background: repeating-linear-gradient(
+    to right,
+    #ffffff 0,
+    #ffffff 1.4px,
+    #d9d4c8 1.4px,
+    #d9d4c8 2px
+  );
+  box-shadow: 0 1px 2px rgba(33, 29, 23, 0.18);
+}
+
+.book-half.left .book-edges {
+  right: 100%;
+}
+
+.book-half.right .book-edges {
+  left: 100%;
+}
+
+/* Cover: boards overhang a cased (sewn) book; paperbacks sit flush. */
+.book-board {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  background: var(--board);
+  border-radius: 2px;
+  box-shadow: 0 3px 10px rgba(33, 29, 23, 0.25);
+}
+
+.book-half.left .book-board {
+  left: calc(-1 * var(--edge) - 6px);
+  right: 0;
+}
+
+.book-half.right .book-board {
+  left: 0;
+  right: calc(-1 * var(--edge) - 6px);
+}
+
+.book-viewer[data-binding="notch"] .book-board,
+.book-viewer[data-binding="perfect"] .book-board {
+  top: -1px;
+  bottom: -3px;
+}
+
+.book-viewer[data-binding="notch"] .book-half.left .book-board,
+.book-viewer[data-binding="perfect"] .book-half.left .book-board {
+  left: calc(-1 * var(--edge) - 1px);
+}
+
+.book-viewer[data-binding="notch"] .book-half.right .book-board,
+.book-viewer[data-binding="perfect"] .book-half.right .book-board {
+  right: calc(-1 * var(--edge) - 1px);
+}
+
+/* A saddle-stitched book has no separate cover: just paper. */
+.book-viewer[data-binding="saddle"] .book-board {
+  display: none;
+}
+
+.book-gutter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 44%;
+  width: 12%;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(33, 29, 23, calc(var(--gutter-shade) * 0.35)) 38%,
+    rgba(33, 29, 23, var(--gutter-shade)) 50%,
+    rgba(33, 29, 23, calc(var(--gutter-shade) * 0.35)) 62%,
+    transparent
+  );
+}
+
+.book-gutter.seam::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 1px solid rgba(33, 29, 23, 0.35);
+}
+
+.book-marks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.spine-staples rect {
+  fill: #9a9a9a;
+  stroke: #6b6b6b;
+  stroke-width: 0.5;
+}
+
+.spine-thread line {
+  stroke: #e8dfc8;
+  stroke-width: 1.6;
+}
+
+.spine-thread circle {
+  fill: #5a5246;
+}
+
+/* The turning leaf: anchored at the spine, front face first. */
+.book-turning {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  transform-style: preserve-3d;
+  animation-duration: 650ms;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.3, 1);
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+
+.book-turning.from-right {
+  left: 50%;
+  transform-origin: left center;
+  animation-name: turn-from-right;
+}
+
+.book-turning.from-left {
+  left: 0;
+  transform-origin: right center;
+  animation-name: turn-from-left;
+}
+
+@keyframes turn-from-right {
+  to {
+    transform: rotateY(-180deg);
+  }
+}
+
+@keyframes turn-from-left {
+  to {
+    transform: rotateY(180deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Still fires animationend, which lands the turn. */
+  .book-turning {
+    animation-duration: 1ms;
+  }
+}
+
+.book-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  box-shadow: 0 0 12px rgba(33, 29, 23, 0.12);
+}
+
+.book-face.back {
+  transform: rotateY(180deg);
+}
+
+.book-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.book-controls .ghost-button {
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px 10px;
+}
+
+.book-controls .ghost-button:disabled {
+  opacity: 0.3;
+  cursor: default;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.book-scrubber {
+  flex: 1;
+  accent-color: var(--red);
+}
+
+.book-caption {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+/* ---------- assembly guide ---------- */
+
+.assembly {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.assembly-title {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.assembly-steps ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.assembly-steps li {
+  counter-increment: step;
+  padding: 5px 0;
+  border-bottom: 1px dotted var(--hairline);
+}
+
+.assembly-steps li:last-child {
+  border-bottom: none;
+}
+
+.assembly-steps label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.assembly-steps label::before {
+  content: counter(step, decimal-leading-zero);
+  color: var(--red);
+  font-size: 11px;
+  width: 2.5ch;
+  flex: none;
+}
+
+.assembly-steps input,
+.signature-check input {
+  accent-color: var(--red);
+  margin: 0;
+  flex: none;
+  transform: translateY(1px);
+}
+
+.assembly-steps input:checked + span {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.stack-order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.stack-order li {
+  min-width: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--ink);
+  text-align: center;
+  font-size: 12px;
+}
+
+.stack-order li.done {
+  background: var(--ink);
+  color: var(--paper-raised);
+}
+
+.signature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.signature-card {
+  margin: 0;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  padding: 12px 14px;
+}
+
+.signature-card figcaption {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.signature-letter {
+  font-family: var(--serif);
+  font-size: 26px;
+  line-height: 1;
+  color: var(--red);
+}
+
+.signature-check {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.head-view {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+.head-centre {
+  stroke: var(--hairline-faint);
+  stroke-dasharray: 2 3;
+}
+
+.head-sheet {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.head-sheet.outer {
+  stroke: var(--red);
+}
+
+.head-tag {
+  font-family: var(--mono);
+  font-size: 8px;
+  fill: var(--ink-soft);
+}
+
+.sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.sheet-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--red-deep);
+  border-bottom: 1px solid var(--hairline);
+  padding: 3px 4px;
+}
+
+.sheet-table td {
+  padding: 3px 4px;
+  border-bottom: 1px dotted var(--hairline);
+}
+
+.sheet-table tr:last-child td {
+  border-bottom: none;
 }

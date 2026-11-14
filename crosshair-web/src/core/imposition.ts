@@ -1,8 +1,8 @@
 /**
- * Impose a leaf sequence onto printed sheet faces for saddle-folded
- * signatures. Pure math: given a leaf count and sizes, produce a plan of
- * faces, each a list of (leaf index, x offset) placements. Rendering walks
- * the plan; nothing here draws anything.
+ * Impose a leaf sequence onto printed sheet faces for folded signatures.
+ * Pure math: given a leaf count and sizes, produce a plan of faces, each a
+ * list of (leaf index, x offset) placements. Rendering walks the plan;
+ * nothing here draws anything.
  *
  * Ported from crosshair_print/imposition.py (fold_plan) and generalized from
  * one folded stack to N signatures: the leaf sequence is split into
@@ -10,11 +10,7 @@
  * bound book is the signatures stacked in order.
  */
 
-/**
- * Physical sheets stapled together per signature. The book is padded with
- * blank leaves so every signature is exactly this size.
- */
-export const SHEETS_PER_SIGNATURE = 4;
+import { signatureLetter, type BookStructure } from "./binding";
 
 export interface Placement {
   /** Index into the book's leaf sequence, or null for a padding blank. */
@@ -39,14 +35,16 @@ export interface ImpositionPlan {
   faces: SheetFace[];
   /** Physical sheets in each signature. */
   sheetsPerSignature: number[];
+  /** Pages per signature (every signature is the same size). */
+  leavesPerSignature: number;
   /** Total leaf slots including padding blanks. */
   paddedLeafCount: number;
 }
 
 /**
- * Saddle-fold imposition for the whole book, in signatures of exactly
- * SHEETS_PER_SIGNATURE sheets (the book is padded with blanks to fill the
- * last signature).
+ * Saddle-fold imposition for the whole book, split into the signatures the
+ * binding calls for (see bookStructure); the book is padded with blanks to
+ * fill the last signature.
  *
  * Within a signature of N leaves (N a multiple of 4, padded with blanks),
  * sheet k of the signature carries leaves (N-2k+2, 2k-1) on its front and
@@ -58,10 +56,12 @@ export function imposeSignatures(
   leafCount: number,
   leafSize: { w: number; h: number },
   sheetSize: { w: number; h: number },
+  structure: BookStructure,
 ): ImpositionPlan {
-  const totalSheets = Math.max(1, Math.ceil(leafCount / 4));
-  const signatureCount = Math.ceil(totalSheets / SHEETS_PER_SIGNATURE);
-  const sheetsPerSignature = Array.from({ length: signatureCount }, () => SHEETS_PER_SIGNATURE);
+  const sheetsPerSignature = Array.from(
+    { length: structure.signatureCount },
+    () => structure.sheetsPerSignature,
+  );
 
   const xLeft = (sheetSize.w - 2 * leafSize.w) / 2;
   const xRight = xLeft + leafSize.w;
@@ -92,13 +92,20 @@ export function imposeSignatures(
     start += n;
   });
 
-  return { sheetSize, leafSize, faces, sheetsPerSignature, paddedLeafCount: start };
+  return {
+    sheetSize,
+    leafSize,
+    faces,
+    sheetsPerSignature,
+    leavesPerSignature: structure.leavesPerSignature,
+    paddedLeafCount: start,
+  };
 }
 
 /**
- * "Signature-item" tag geometry, in points from the leaf's lower fore-edge
- * corner (away from the spine: lower-left on versos, lower-right on rectos).
- * Both renderers use it; the color is mirrored in index.css.
+ * Page tag geometry, in points from the leaf's lower fore-edge corner (away
+ * from the spine: lower-left on versos, lower-right on rectos). Both
+ * renderers use it; the color is mirrored in index.css.
  *
  * Leaf edges coincide with paper edges, so the inset must clear the
  * unprintable border of common printers (~4–5 mm): 14 pt ≈ 4.9 mm keeps the
@@ -107,12 +114,14 @@ export function imposeSignatures(
  */
 export const PAGE_LABEL_STYLE = { size: 5, inset: 14, gray: 0.45 };
 
-/**
- * "Signature-item" page tag (both 1-based) for a padded leaf slot, e.g.
- * "2-5" for the fifth page of the second signature. Printed on every page
- * so a folded stack can be checked against its signature and order.
- */
-export function pageLabel(slot: number): string {
-  const leavesPerSignature = SHEETS_PER_SIGNATURE * 4;
-  return `${Math.floor(slot / leavesPerSignature) + 1}-${(slot % leavesPerSignature) + 1}`;
+/** "Signature B · Sheet 2 · Back" per face; sheet numbers restart in each signature. */
+export function faceCaptions(faces: SheetFace[]): string[] {
+  const seen = new Map<number, number>();
+  return faces.map((face) => {
+    const faceInSignature = seen.get(face.signature) ?? 0;
+    seen.set(face.signature, faceInSignature + 1);
+    const sheet = Math.floor(faceInSignature / 2) + 1;
+    const side = face.side === "front" ? "Front" : "Back";
+    return `Signature ${signatureLetter(face.signature)} · Sheet ${sheet} · ${side}`;
+  });
 }

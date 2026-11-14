@@ -22,7 +22,9 @@ export function CardsWorkspace(props: {
   onSettingsChange: (settings: CardSettings) => void;
   /** Name of the dropped folder, used for the PDF's filename. */
   folderName?: string;
-  /** Notices, image list or dropzone, rendered above the preview. */
+  /** Intake notices, rendered first. */
+  notices: ReactNode;
+  /** Image list or dropzone, rendered below the preview. */
   imagePanel: ReactNode;
 }) {
   const { items, settings } = props;
@@ -122,7 +124,7 @@ export function CardsWorkspace(props: {
       </aside>
 
       <main className="content">
-        {props.imagePanel}
+        {props.notices}
         {items.length > 0 && plan.ok && (
           <section className="panel">
             <CardPreview
@@ -135,6 +137,7 @@ export function CardsWorkspace(props: {
             />
           </section>
         )}
+        {props.imagePanel}
       </main>
     </div>
   );

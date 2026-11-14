@@ -3,6 +3,7 @@
  * UI converts to and from the display unit at the input boundary.
  */
 
+import type { BindingMethod } from "./core/binding";
 import { NOTEBOOK_PRESETS, PRINTER_PRESETS, type Size } from "./core/cards";
 import {
   DEFAULT_EFFECT_SETTINGS,
@@ -27,6 +28,8 @@ export interface Settings {
   margin: number;
   /** Spine-side margin in points. */
   gutter: number;
+  /** How the printed signatures are joined into a book. */
+  binding: BindingMethod;
   /** Draw a formatted blank facing each image for copying against. */
   facingPages: boolean;
   imageSide: "left" | "right";
@@ -80,6 +83,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sheetH: PAGE_PRESETS[0].sheetH,
   margin: toPoints(0.25, "in"),
   gutter: toPoints(0.5, "in"),
+  binding: "sewn",
   facingPages: true,
   imageSide: "left",
   title: "Sketchbook",

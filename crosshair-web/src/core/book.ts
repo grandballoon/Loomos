@@ -46,6 +46,12 @@ export interface Leaf {
   titleLines?: string[];
 }
 
+/** The leaf at a padded slot; slots past the content are blanks. */
+export function leafAt(leaves: Leaf[], slot: number | null): Leaf | null {
+  if (slot === null) return null;
+  return leaves[slot] ?? { kind: "blank", role: slot % 2 === 0 ? "recto" : "verso" };
+}
+
 /**
  * The image/effect rectangle: contentSize centered in the content box.
  * Because recto and verso boxes mirror across the spine and the rect is

@@ -1,5 +1,5 @@
 import { EFFECT_KINDS, EFFECT_LABELS, type EffectKind } from "../core/effects";
-import { SHEETS_PER_SIGNATURE } from "../core/imposition";
+import { BINDING_INFO, BINDING_METHODS, gutterForBinding } from "../core/binding";
 import { UNITS, type Unit } from "../core/lengths";
 import { PAGE_PRESETS, type Settings } from "../state";
 import { ColorField, LengthField, SelectField, ToggleField } from "./fields";
@@ -63,8 +63,20 @@ export function SettingsPanel(props: {
 
       <section className="settings-section">
         <h2 className="section-title">Binding</h2>
+        <SelectField
+          label="Method"
+          value={settings.binding}
+          options={BINDING_METHODS.map((method) => ({
+            value: method,
+            label: BINDING_INFO[method].label,
+          }))}
+          onChange={(binding) =>
+            set({ binding, gutter: gutterForBinding(binding, settings.gutter) })
+          }
+        />
         <p className="section-note">
-          Bound in signatures of {SHEETS_PER_SIGNATURE} sheets, padded with blank pages.
+          {BINDING_INFO[settings.binding].summary} Padded with blank pages to fill the last
+          signature.
         </p>
         <LengthField
           label="Margin"
